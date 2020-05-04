@@ -9,29 +9,41 @@
 
 uint8_t nearest_color(uint8_t in, uint8_t intervalLen)
 {
-	in = (in>255)?255:in;
 	int temp = round(((float)in)/intervalLen);
 	return temp*intervalLen;
 }
 
 void basic(unsigned char* img, unsigned char* d_img, size_t img_size, int width, int channels,uint8_t intervalLen)
 {
-	for (unsigned char *p = img, *pd = d_img; p!=img+img_size; p += channels, pd += channels)
+	int err = 0, temp = 0;
+	for (unsigned int i = 0; i<img_size; i += channels)
 	{
-		*pd = nearest_color(*p, intervalLen);
-		if(channels == 2)
+		d_img[i] = nearest_color(img[i], intervalLen);
+		if (channels == 2)
 		{
-			*(pd + 1) = *(p + 1);
+			d_img[i+1] = img[i+1];
 		}
-		int err = *p - *pd;
-		if (p + channels < img + img_size)
-			*(p + channels) += (err*7)/16;
-		if (p + channels*(width-1) < img + img_size)
-			*(p + channels*(width - 1)) += (err*3)/16;
-		if (p + channels*width < img + img_size)
-			*(p + channels*width) += (err*5)/16;
-		if (p + channels*(width + 1) < img + img_size)
-			*(p + channels*(width + 1)) += (err)/16;
+		err = img[i] - d_img[i];
+		if (i + channels < img_size)
+		{
+			temp = img[i + channels] + (err*7)/16;
+			img[i + channels] = (temp>255)?255:temp;
+		}
+		if (i + channels*(width - 1) < img_size && (i/channels) % width != 0)
+		{
+			temp = img[i + channels*(width - 1)] + (err*3)/16;
+			img[i + channels*(width - 1)] = (temp>255)?255:temp;
+		}
+		if (i + channels*width < img_size)
+		{
+			temp = img[i + channels*width] + (err*5)/16;
+			img[i + channels*width] = (temp>255)?255:temp;
+		}
+		if (i + channels*(width + 1) < img_size && ((i/channels) + 1) % width != 0)
+		{
+			temp = img[i + channels*(width + 1)] + err/16;
+			img[i + channels*(width + 1)] = (temp>255)?255:temp;
+		}
 	}
 	return;
 }
