@@ -7,13 +7,14 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image/stb_image_write.h"
 
-uint8_t nearest_color(uint8_t in, uint8_t intervalLen)
+uint8_t nearest_color(int in, uint8_t intervalLen)
 {
+	in = (in > 255)?255:in;
 	int temp = round(((float)in)/intervalLen);
 	return temp*intervalLen;
 }
 
-void basic(unsigned char* img, unsigned char* d_img, size_t img_size, int width, int channels,uint8_t intervalLen)
+void basic(int* img, unsigned char* d_img, size_t img_size, int width, int channels,uint8_t intervalLen)
 {
 	int err = 0, temp = 0;
 	for (unsigned int i = 0; i<img_size; i += channels)
@@ -26,23 +27,19 @@ void basic(unsigned char* img, unsigned char* d_img, size_t img_size, int width,
 		err = img[i] - d_img[i];
 		if (i + channels < img_size)
 		{
-			temp = img[i + channels] + (err*7)/16;
-			img[i + channels] = (temp>255)?255:temp;
+			img[i + channels] += (err*7)/16;
 		}
 		if (i + channels*(width - 1) < img_size && (i/channels) % width != 0)
 		{
-			temp = img[i + channels*(width - 1)] + (err*3)/16;
-			img[i + channels*(width - 1)] = (temp>255)?255:temp;
+			img[i + channels*(width - 1)] += (err*3)/16;
 		}
 		if (i + channels*width < img_size)
 		{
-			temp = img[i + channels*width] + (err*5)/16;
-			img[i + channels*width] = (temp>255)?255:temp;
+			img[i + channels*width] += (err*5)/16;
 		}
 		if (i + channels*(width + 1) < img_size && ((i/channels) + 1) % width != 0)
 		{
-			temp = img[i + channels*(width + 1)] + err/16;
-			img[i + channels*(width + 1)] = (temp>255)?255:temp;
+			img[i + channels*(width + 1)] += err/16;
 		}
 	}
 	return;
@@ -69,12 +66,17 @@ int main(int argc, char* argv[])
 	size_t img_size = width*height*channels;
 
 	unsigned char* d_img = calloc(img_size, sizeof(unsigned char));
-	if (d_img == NULL)
+	int* pre = calloc(img_size, sizeof(int));
+	if (d_img == NULL || pre == NULL)
 	{
 		printf("Unable to allocate memory for image\n");
 	}
 
-	basic(img, d_img, img_size, width, channels, intervalLen);
+	for(int i=0; i < img_size; i++)
+	{
+		pre[i] = img[i];
+	}
+	basic(pre, d_img, img_size, width, channels, intervalLen);
 	stbi_write_png(argv[3], width, height, channels, d_img, width*channels);
 
 	stbi_image_free(img);
