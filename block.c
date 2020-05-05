@@ -94,7 +94,6 @@ int main(int argc, char* argv[])
 	int width, height, channels;
 	unsigned char *img = stbi_load(argv[2],&width, &height, &channels, 0);
 	uint8_t intervalLen = 255/(strtol(argv[1], NULL, 10)-1);
-	int a=4,b=2;
 
 	if (img == NULL)
 	{
@@ -109,6 +108,7 @@ int main(int argc, char* argv[])
 	}
 
 	size_t img_size = width*height*channels;
+	int a = sqrt(width*height), b = (width*height)/a;
 
 	unsigned char* d_img = calloc(img_size, sizeof(unsigned char));
 	int pre[height][width*channels];
