@@ -80,7 +80,7 @@ void ditherblock(int height, int width, int channels, int img[height][width], un
 void block(int height, int width, int channels, int img[height][width], unsigned char* d_img, uint8_t intervalLen, int a, int b)
 {
 	int row = 0, col = 0;
-	for (int i=1; i < 2*ceil((height-a)/(float)a) + ceil(width/(float)b); i++)
+	for (int i=1; i <= 2*ceil((height-a)/(float)a) + ceil(width/(float)b); i++)
 	{
 		PrimalBlock pb = pb_finder(height, width, a, b, i);
 		row = pb.row-1;
