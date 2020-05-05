@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <omp.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
@@ -83,10 +84,15 @@ void block(int height, int width, int channels, int img[height][width], unsigned
 	{
 		PrimalBlock pb = pb_finder(height, width, a, b, i);
 		row = pb.row-1;
-		col = pb.col-1;
-		for(int k=0; row + k < height && col - 2*k*channels >=0; k++)
+		omp_set_num_threads(16);
+		#pragma omp parallel for
+		for(col = pb.col-1; col>=0; col -= 2*channels)
 		{
-			ditherblock(height, width, channels, img, d_img, intervalLen, row+k, col-2*k*channels, a, b);
+			if(row<height)
+			{
+				ditherblock(height, width, channels, img, d_img, intervalLen, row, col, a, b);
+			}
+			row += 1;
 		}
 	}
 }
@@ -110,7 +116,9 @@ int main(int argc, char* argv[])
 	}
 
 	size_t img_size = width*height*channels;
-	int a = sqrt(width*height), b = (width*height)/a;
+	int block_size = (width*height)/16;
+	//int a = sqrt(block_size), b = a;
+	int a = 4, b = 2;
 
 	unsigned char* d_img = calloc(img_size, sizeof(unsigned char));
 	int pre[height][width*channels];
