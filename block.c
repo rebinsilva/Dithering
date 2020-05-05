@@ -31,7 +31,7 @@ PrimalBlock pb_finder(int M, int N, int a, int b, int itr)
 	}
 	else
 	{
-		ans.row = 1 + ceil((itr -ceil((float)N/b))/2);
+		ans.row = 1 + ceil((itr - ceil((float)N/b))/2);
 		ans.col = ceil((float)N/b) - (int)(itr - ceil((float)N/b))%2;
 	}
 	return ans;
@@ -80,11 +80,10 @@ void ditherblock(int height, int width, int channels, int img[height][width], un
 void block(int height, int width, int channels, int img[height][width], unsigned char* d_img, uint8_t intervalLen, int a, int b)
 {
 	int row = 0, col = 0;
-	for (int i=1; i < 2*ceil((height-a)/(float)a) + ceil(width/(float)b) - 1; i++)
+	for (int i=1; i < 2*ceil((height-a)/(float)a) + ceil(width/(float)b); i++)
 	{
 		PrimalBlock pb = pb_finder(height, width, a, b, i);
 		row = pb.row-1;
-		//printf("%d %d\n",row,pb.col-1);
 		omp_set_num_threads(1);
 		#pragma omp parallel for
 		for(col = pb.col-1; col>=0; col -= 2*channels)
@@ -119,7 +118,7 @@ int main(int argc, char* argv[])
 	size_t img_size = width*height*channels;
 	int block_size = (width*height)/16;
 	//int a = sqrt(block_size), b = a;
-	int a = 100, b = 100;
+	int a = 49, b = 49;
 
 	unsigned char* d_img = calloc(img_size, sizeof(unsigned char));
 	int pre[height][width*channels];
