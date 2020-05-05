@@ -28,18 +28,21 @@ void basic(int* img, unsigned char* d_img, size_t img_size, int width, int chann
 		if (i + channels < img_size)
 		{
 			img[i + channels] += (err*7)/16;
-		}
-		if (i + channels*(width - 1) < img_size && (i/channels) % width != 0)
-		{
-			img[i + channels*(width - 1)] += (err*3)/16;
-		}
-		if (i + channels*width < img_size)
-		{
-			img[i + channels*width] += (err*5)/16;
-		}
-		if (i + channels*(width + 1) < img_size && ((i/channels) + 1) % width != 0)
-		{
-			img[i + channels*(width + 1)] += err/16;
+			if (i + channels*(width - 1) < img_size)
+			{
+				if ((i/channels) % width != 0)
+				{
+					img[i + channels*(width - 1)] += (err*3)/16;
+				}
+				if (i + channels*width < img_size)
+				{
+					img[i + channels*width] += (err*5)/16;
+					if (i + channels*(width + 1) < img_size && ((i/channels) + 1) % width != 0)
+					{
+						img[i + channels*(width + 1)] += err/16;
+					}
+				}
+			}
 		}
 	}
 	return;
