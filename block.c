@@ -82,9 +82,11 @@ void block(int height, int width, int channels, int img[height][width], unsigned
 	for (int i=1; i < 2*ceil((height-a)/(float)a) + ceil(width/(float)b) - 1; i++)
 	{
 		PrimalBlock pb = pb_finder(height, width, a, b, i);
-		for( row = pb.row-1, col = pb.col-1; row < height && col >= 0; row += 1, col -= 2*channels)
+		row = pb.row-1;
+		col = pb.col-1;
+		for(int k=0; row + k < height && col - 2*k*channels >=0; k++)
 		{
-			ditherblock(height, width, channels, img, d_img, intervalLen, row, col, a, b);
+			ditherblock(height, width, channels, img, d_img, intervalLen, row+k, col-2*k*channels, a, b);
 		}
 	}
 }
