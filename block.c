@@ -80,19 +80,20 @@ void ditherblock(int height, int width, int channels, int img[height][width], un
 void block(int height, int width, int channels, int img[height][width], unsigned char* d_img, uint8_t intervalLen, int a, int b)
 {
 	int row = 0, col = 0;
-	for (int i=1; i < 2*ceil((height-a)/(float)a) + ceil(width/(float)b); i++)
+	for (int i=1; i <= 2*ceil((height-a)/(float)a) + ceil(width/(float)b); i++)
 	{
 		PrimalBlock pb = pb_finder(height, width, a, b, i);
 		row = pb.row-1;
-		omp_set_num_threads(1);
+		col = pb.col-1;
+		printf("%d %d\n", row, col);
+		omp_set_num_threads(16);
 		#pragma omp parallel for
-		for(col = pb.col-1; col>=0; col -= 2*channels)
+		for(int k=0; k < height - row; k++)
 		{
-			if(row<height)
+			if(col - 2*k*channels >= 0)
 			{
-				ditherblock(height, width, channels, img, d_img, intervalLen, row, col, a, b);
+				ditherblock(height, width, channels, img, d_img, intervalLen, row+k, col-2*k*channels, a, b);
 			}
-			row += 1;
 		}
 	}
 }
