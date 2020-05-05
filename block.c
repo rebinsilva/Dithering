@@ -117,8 +117,7 @@ int main(int argc, char* argv[])
 
 	size_t img_size = width*height*channels;
 	int block_size = (width*height)/16;
-	//int a = sqrt(block_size), b = a;
-	int a = 49, b = 49;
+	int a = sqrt(block_size), b = a;
 
 	unsigned char* d_img = calloc(img_size, sizeof(unsigned char));
 	int pre[height][width*channels];
