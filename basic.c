@@ -27,7 +27,10 @@ void basic(int* img, unsigned char* d_img, size_t img_size, int width, int chann
 		err = img[i] - d_img[i];
 		if (i + channels < img_size)
 		{
-			img[i + channels] += (err*7)/16;
+			if (((i/channels) + 1) % width != 0)
+			{
+				img[i + channels] += (err*7)/16;
+			}
 			if (i + channels*(width - 1) < img_size)
 			{
 				if ((i/channels) % width != 0)
