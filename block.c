@@ -48,17 +48,17 @@ void dither(int height, int width, int channels, int img[height][width*channels]
 	if (j+channels < width*channels)
 	{
 		img[i][j+channels] += (err*7)/16;
-		if (i + 1 < height)
+	}
+	if (i + 1 < height)
+	{
+		if (j != 0)
 		{
-			if (j != 0)
-			{
-				img[i+1][j-channels] += (err*3)/16;
-			}
-			img[i+1][j] += (err*5)/16;
-			if (j + channels < width*channels)
-			{
-				img[i+1][j+channels] += err/16;
-			}
+			img[i+1][j-channels] += (err*3)/16;
+		}
+		img[i+1][j] += (err*5)/16;
+		if (j + channels < width*channels)
+		{
+			img[i+1][j+channels] += err/16;
 		}
 	}
 }
