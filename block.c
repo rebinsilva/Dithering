@@ -69,7 +69,7 @@ void ditherblock(int height, int width, int channels, int img[height][width], un
 	col = b*col;
 	for (int i=row;i<row+a && i<height;i++)
 	{
-		for (int j=(col==0)?col:(col+a-i+row);j<col + b + a - i + row && j<width ;j++)
+		for (int j=(col==0)?col:(col+a-i+row); j<col + b + a - i + row && j<width; j++)
 		{
 			dither(height, width, channels, img, d_img, intervalLen, i, j*channels);
 		}
@@ -78,12 +78,12 @@ void ditherblock(int height, int width, int channels, int img[height][width], un
 
 void block(int height, int width, int channels, int img[height][width], unsigned char* d_img, uint8_t intervalLen, int a, int b)
 {
-	int row = 0, col =0;
-	for (int i=1; i < 2*(height/a) + (width/b); i++)
+	int row = 0, col = 0;
+	for (int i=1; i < 2*ceil(height/(float)a) + ceil(width/(float)b) - 1; i++)
 	{
 		PrimalBlock pb = pb_finder(height, width, a, b, i);
 		printf("%d %d\n",pb.row,pb.col);
-		for( row = pb.row-1, col = pb.col-1; row < height && col > 0; row += 1, col -=2*channels)
+		for( row = pb.row-1, col = pb.col-1; row < height && col > 0; row += 1, col -= 2*channels)
 		{
 			ditherblock(height, width, channels, img, d_img, intervalLen, row, col, a, b);
 		}
