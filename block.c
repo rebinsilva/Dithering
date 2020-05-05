@@ -85,7 +85,7 @@ void block(int height, int width, int channels, int img[height][width], unsigned
 		PrimalBlock pb = pb_finder(height, width, a, b, i);
 		row = pb.row-1;
 		col = pb.col-1;
-		printf("%d %d\n", row, col);
+		//printf("%d %d\n", row, col);
 		omp_set_num_threads(16);
 		#pragma omp parallel for
 		for(int k=0; k < height - row; k++)
@@ -118,8 +118,7 @@ int main(int argc, char* argv[])
 
 	size_t img_size = width*height*channels;
 	int block_size = (width*height)/16;
-	//int a = sqrt(block_size), b = a;
-	int a = 49, b = 49;
+	int a = sqrt(block_size), b = a;
 
 	unsigned char* d_img = calloc(img_size, sizeof(unsigned char));
 	int pre[height][width*channels];
