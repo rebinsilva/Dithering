@@ -84,7 +84,7 @@ void block(int height, int width, int channels, int img[height][width], unsigned
 	{
 		PrimalBlock pb = pb_finder(height, width, a, b, i);
 		row = pb.row-1;
-		omp_set_num_threads(1);
+		omp_set_num_threads(16);
 		#pragma omp parallel for
 		for(col = pb.col-1; col>=0; col -= 2*channels)
 		{
