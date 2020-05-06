@@ -87,12 +87,12 @@ void block(int height, int width, int channels, int img[height][width], unsigned
 		row = pb.row-1;
 		col = pb.col-1;
 		//printf("%d %d\n", row, col);
-		omp_set_num_threads(16);
-		int mini = fmin(height - row -1, col/(2*channels));
+		int mini = fmin(height - row -1, col/2);
+		omp_set_num_threads(8);
 		#pragma omp parallel for
 		for(int k=0; k <= mini; k++)
 		{
-			ditherblock(height, width, channels, img, d_img, intervalLen, row+k, col-2*k*channels, a, b);
+			ditherblock(height, width, channels, img, d_img, intervalLen, row+k, (col-2*k)*channels, a, b);
 		}
 	}
 }
@@ -118,7 +118,6 @@ int main(int argc, char* argv[])
 	size_t img_size = width*height*channels;
 	int block_size = (width*height)/16;
 	int a = sqrt(block_size), b = a;
-	a=49,b=49;
 
 	unsigned char* d_img = calloc(img_size, sizeof(unsigned char));
 	int pre[height][width*channels];
@@ -131,7 +130,7 @@ int main(int argc, char* argv[])
 	{
 		for (int j=0; j < width*channels; j++)
 		{
-			pre[i][j] = img[i*width + j];
+			pre[i][j] = img[i*width*channels + j];
 		}
 	}
 	block(height, width, channels, pre, d_img, intervalLen, a, b);
