@@ -1,4 +1,3 @@
-%%cuda --name CS17B111.cu
 #include <stdio.h>
 #include <cuda.h>
 #include <stdlib.h>
