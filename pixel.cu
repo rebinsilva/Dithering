@@ -43,11 +43,10 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 	int tid = blockIdx.x*blockDim.x + threadIdx.x;
 	if (tid >= size[0])
 	{
-		//printf("%d\n",pri);
 		return;
 	}
 	out[pri+tid] = (unsigned char)nearest_color(in[pri+tid], intervalLen);
-	int err = out[pri+tid] - in[pri+tid];
+	int err = in[pri+tid] - out[pri+tid];
 	if (right[0])
 	{
 		if (tid !=0)
@@ -63,7 +62,7 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 	}
 	else if (right[1])
 	{
-		in[pri + size[0] + tid ] += (err*7)/16;
+		in[pri + size[0] + tid] += (err*7)/16;
 		if (tid + 1 < size[1])
 			in[pri + size[0] + tid + 1] += (err*3)/16;
 		if (tid < size[2])
@@ -73,7 +72,7 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 	}
 	else if (right[2])
 	{
-		in[pri + size[0] + tid ] += (err*7)/16;
+		in[pri + size[0] + tid] += (err*7)/16;
 		if (tid + 1 < size[1])
 			in[pri + size[0] + tid + 1] += (err*3)/16;
 		if (tid + 1 < size[2])
@@ -83,7 +82,7 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 	}
 	else
 	{
-		in[pri + size[0] + tid ] += (err*7)/16;
+		in[pri + size[0] + tid] += (err*7)/16;
 		if (tid + 1 < size[1])
 			in[pri + size[0] + tid + 1] += (err*3)/16;
 		if (tid + 1 < size[2])
