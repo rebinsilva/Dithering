@@ -1,3 +1,4 @@
+%%cuda --name CS17B111.cu
 #include <stdio.h>
 #include <cuda.h>
 #include <stdlib.h>
@@ -14,7 +15,7 @@ typedef struct PrimalBlock
 	int col;
 }PrimalBlock;
 
-__device__ uint8_t nearest_color(int in, uint8_t intervalLen)
+__host__ __device__ uint8_t nearest_color(int in, uint8_t intervalLen)
 {
 	in = min(in, 255);
 	in = max(in, 0);
@@ -38,16 +39,10 @@ PrimalBlock pb_finder(int M, int N, int itr)
 	return ans;
 }
 
-__global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned char* out, int size[])
+void dither_cpu(bool right[], int pri, int intervalLen, int* in, unsigned char* out, int size[], int tid)
 {
-	int tid = blockIdx.x*blockDim.x + threadIdx.x;
-	if (tid >= size[0])
-	{
-		//printf("%d\n",pri);
-		return;
-	}
 	out[pri+tid] = (unsigned char)nearest_color(in[pri+tid], intervalLen);
-	int err = out[pri+tid] - in[pri+tid];
+	int err = in[pri+tid] - out[pri+tid];
 	if (right[0])
 	{
 		if (tid !=0)
@@ -63,7 +58,7 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 	}
 	else if (right[1])
 	{
-		in[pri + size[0] + tid ] += (err*7)/16;
+		in[pri + size[0] + tid] += (err*7)/16;
 		if (tid + 1 < size[1])
 			in[pri + size[0] + tid + 1] += (err*3)/16;
 		if (tid < size[2])
@@ -73,7 +68,7 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 	}
 	else if (right[2])
 	{
-		in[pri + size[0] + tid ] += (err*7)/16;
+		in[pri + size[0] + tid] += (err*7)/16;
 		if (tid + 1 < size[1])
 			in[pri + size[0] + tid + 1] += (err*3)/16;
 		if (tid + 1 < size[2])
@@ -83,7 +78,62 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 	}
 	else
 	{
-		in[pri + size[0] + tid ] += (err*7)/16;
+		in[pri + size[0] + tid] += (err*7)/16;
+		if (tid + 1 < size[1])
+			in[pri + size[0] + tid + 1] += (err*3)/16;
+		if (tid + 1 < size[2])
+			in[pri + size[0] + size[1] + tid + 1] += (err*5)/16;
+		if (tid + 1 < size[3])
+			in[pri + size[0] + size[1] + size[2] + tid + 1] += err/16;
+	}
+	return;
+}
+
+__global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned char* out, int size[])
+{
+	int tid = blockIdx.x*blockDim.x + threadIdx.x;
+	if (tid >= size[0])
+	{
+		return;
+	}
+	out[pri+tid] = (unsigned char)nearest_color(in[pri+tid], intervalLen);
+	int err = in[pri+tid] - out[pri+tid];
+	if (right[0])
+	{
+		if (tid !=0)
+		{
+			in[pri + size[0] + tid - 1] += (err*7)/16;
+			if (tid - 1 < size[3])
+				in[pri + size[0] + size[1] + size[2] + tid - 1] += err/16;
+		}
+		if (tid < size[1])
+			in[pri + size[0] + tid] += (err*3)/16;
+		if (tid < size[2])
+			in[pri + size[0] + size[1] + tid] += (err*5)/16;
+	}
+	else if (right[1])
+	{
+		in[pri + size[0] + tid] += (err*7)/16;
+		if (tid + 1 < size[1])
+			in[pri + size[0] + tid + 1] += (err*3)/16;
+		if (tid < size[2])
+			in[pri + size[0] + size[1] + tid] += (err*5)/16;
+		if (tid < size[3])
+			in[pri + size[0] + size[1] + size[2] + tid] += err/16;
+	}
+	else if (right[2])
+	{
+		in[pri + size[0] + tid] += (err*7)/16;
+		if (tid + 1 < size[1])
+			in[pri + size[0] + tid + 1] += (err*3)/16;
+		if (tid + 1 < size[2])
+			in[pri + size[0] + size[1] + tid + 1] += (err*5)/16;
+		if (tid < size[3])
+			in[pri + size[0] + size[1] + size[2] + tid] += err/16;
+	}
+	else
+	{
+		in[pri + size[0] + tid] += (err*7)/16;
 		if (tid + 1 < size[1])
 			in[pri + size[0] + tid + 1] += (err*3)/16;
 		if (tid + 1 < size[2])
@@ -100,6 +150,11 @@ void ditherimage(int height, int width, int intervalLen, int* in, unsigned char*
 	bool right[3];
 	int* g_size;
 	bool* g_right;
+	bool isGPU = false;
+	int *in_cpu = (int*)malloc(width*height*sizeof(int));
+	unsigned char* out_cpu = (unsigned char*)malloc(width*height*sizeof(unsigned char));
+	cudaMemcpy(in_cpu, in, width*height*sizeof(int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(out_cpu, out, width*height*sizeof(unsigned char), cudaMemcpyDeviceToHost);
 	cudaMalloc(&g_size, 4*sizeof(int));
 	cudaMalloc(&g_right, 4*sizeof(bool));
 	for (int i=1; i <= 2*(height-1) + width; i++)
@@ -114,15 +169,41 @@ void ditherimage(int height, int width, int intervalLen, int* in, unsigned char*
 		right[2] = pb.col >= width - 2;
 		cudaMemcpy(g_size, size, 4*sizeof(int), cudaMemcpyHostToDevice);
 		cudaMemcpy(g_right, right, 3*sizeof(bool), cudaMemcpyHostToDevice);
-		if(size[0] < 1024)
+		if(size[0] > 64)
 		{
-			dither<<<1,size[0]>>>(g_right, primals[i-1], intervalLen, in, out, g_size);
+			if(!isGPU)
+			{
+				cudaMemcpy(in, in_cpu, width*height*sizeof(int), cudaMemcpyHostToDevice);
+				cudaMemcpy(out, out_cpu, width*height*sizeof(unsigned char), cudaMemcpyHostToDevice);
+				isGPU = true;
+			}
+			if(size[0] < 1024)
+			{
+				dither<<<1,size[0]>>>(g_right, primals[i-1], intervalLen, in, out, g_size);
+			}
+			else
+			{
+				dither<<<ceil(((float)size[0])/1024),1024>>>(g_right, primals[i-1], intervalLen, in, out, g_size);
+			}
 		}
 		else
 		{
-			dither<<<ceil(((float)size[0])/1024),1024>>>(g_right, primals[i-1], intervalLen, in, out, g_size);
+			if(isGPU)
+			{
+				cudaMemcpy(in_cpu, in, width*height*sizeof(int), cudaMemcpyDeviceToHost);
+				cudaMemcpy(out_cpu, out, width*height*sizeof(unsigned char), cudaMemcpyDeviceToHost);
+				isGPU = false;
+			}
+		
+			for(int j=0; j<size[0]; j++)
+			{
+				dither_cpu(right, primals[i-1], intervalLen, in_cpu, out_cpu, size, j);
+			}
 		}
 	}
+
+	cudaMemcpy(in, in_cpu, width*height*sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(out, out_cpu, width*height*sizeof(unsigned char), cudaMemcpyHostToDevice);
 }
 
 void reorder(int height, int width, int channels, unsigned char** pre, int out[], int primals[])
