@@ -17,6 +17,7 @@ typedef struct PrimalBlock
 __device__ uint8_t nearest_color(int in, uint8_t intervalLen)
 {
 	in = min(in, 255);
+	in = max(in, 0);
 	int temp = round(((float)in)/intervalLen);
 	return (uint8_t)temp*intervalLen;
 }
@@ -41,7 +42,10 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 {
 	int tid = blockIdx.x*blockDim.x + threadIdx.x;
 	if (tid >= size[0])
+	{
+		//printf("%d\n",pri);
 		return;
+	}
 	out[pri+tid] = (unsigned char)nearest_color(in[pri+tid], intervalLen);
 	int err = out[pri+tid] - in[pri+tid];
 	if (right[0])
@@ -112,11 +116,11 @@ void ditherimage(int height, int width, int intervalLen, int* in, unsigned char*
 		cudaMemcpy(g_right, right, 3*sizeof(bool), cudaMemcpyHostToDevice);
 		if(size[0] < 1024)
 		{
-			dither<<<1,size[0]>>>(g_right, primals[i], intervalLen, in, out, g_size);
+			dither<<<1,size[0]>>>(g_right, primals[i-1], intervalLen, in, out, g_size);
 		}
 		else
 		{
-			dither<<<ceil(((float)size[0])/1024),1024>>>(g_right, primals[i], intervalLen, in, out, g_size);
+			dither<<<ceil(((float)size[0])/1024),1024>>>(g_right, primals[i-1], intervalLen, in, out, g_size);
 		}
 	}
 }
@@ -142,7 +146,7 @@ void reorder(int height, int width, int channels, unsigned char** pre, int out[]
 
 }
 
-void order(int height, int width, int channels, int in[], unsigned char* img, unsigned char* post)
+void order(int height, int width, int channels, unsigned char in[], unsigned char* img, unsigned char* post)
 {
 	int counter = 0;
 	int row =0;
@@ -152,7 +156,7 @@ void order(int height, int width, int channels, int in[], unsigned char* img, un
 		PrimalBlock pb = pb_finder(height, width, i);
 		row = pb.row-1;
 		col = pb.col-1;
-		int mini = fmin(height - row -1, ((float)col)/(2));
+		int mini = fmin(height - row -1, ((float)col)/2);
 		for(int k=0; k <= mini; k++)
 		{
 			post[((row+k)*width+col-2*k)*channels] = in[counter];
@@ -187,11 +191,12 @@ int main(int argc, char* argv[])
 	unsigned char* d_img = (unsigned char*)calloc(img_size, sizeof(unsigned char));
 	unsigned char* pre[height];
 	int reordered[width*height];
+	unsigned char dithered[width*height];
 	int *g_reordered;
 	unsigned char* g_dithered;
-	int primals[width+2*(height-1)+2];
-	primals[width+2*(height-1)]=width*height;
-	primals[width+2*(height-1) + 1]=width*height;
+	int primals[width+2*(height-1)+4];
+	for(int i=0; i<4; i++)
+		primals[width+2*(height-1) + i]=width*height;
 	cudaMalloc(&g_reordered, width*height*sizeof(int));
 	cudaMalloc(&g_dithered, width*height*sizeof(int));
 	if (d_img == NULL)
@@ -207,8 +212,8 @@ int main(int argc, char* argv[])
 	reorder(height, width, channels, pre, reordered, primals);
 	cudaMemcpy(g_reordered, reordered, width*height*sizeof(int), cudaMemcpyHostToDevice);
 	ditherimage(height, width, intervalLen, g_reordered, g_dithered, primals);
-	cudaMemcpy(reordered, g_dithered, width*height*sizeof(int), cudaMemcpyDeviceToHost);
-	order(height, width, channels, reordered, img, d_img);
+	cudaMemcpy(dithered, g_dithered, width*height*sizeof(unsigned char), cudaMemcpyDeviceToHost);
+	order(height, width, channels, dithered, img, d_img);
 	stbi_write_png(argv[3], width, height, channels, d_img, width*channels);
 	free(d_img);
 	cudaFree(g_dithered);
