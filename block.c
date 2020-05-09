@@ -39,7 +39,7 @@ PrimalBlock pb_finder(int M, int N, int a, int b, int itr)
 	return ans;
 }
 
-void dither(int height, int width, int channels, int img[height][width*channels], unsigned char* d_img, uint8_t intervalLen, int row, int col)
+void dither(int height, int width, int channels, int** img, unsigned char* d_img, uint8_t intervalLen, int row, int col)
 {
 	int i=row,j=col;
 	d_img[i*width*channels + j] = nearest_color(img[i][j], intervalLen);
@@ -66,7 +66,7 @@ void dither(int height, int width, int channels, int img[height][width*channels]
 	}
 }
 
-void ditherblock(int height, int width, int channels, int img[height][width], unsigned char* d_img, uint8_t intervalLen, int row, int col, int a, int b)
+void ditherblock(int height, int width, int channels, int** img, unsigned char* d_img, uint8_t intervalLen, int row, int col, int a, int b)
 {
 	row = a*row;
 	col = b*col;
@@ -79,7 +79,7 @@ void ditherblock(int height, int width, int channels, int img[height][width], un
 	}
 }
 
-void block(int height, int width, int channels, int img[height][width], unsigned char* d_img, uint8_t intervalLen, int a, int b)
+void block(int height, int width, int channels, int** img, unsigned char* d_img, uint8_t intervalLen, int a, int b)
 {
 	int row = 0;
 	float col = 0;
@@ -122,14 +122,18 @@ int main(int argc, char* argv[])
 	int a = sqrt(block_size), b = a;
 
 	unsigned char* d_img = calloc(img_size, sizeof(unsigned char));
-	int pre[height][width*channels];
-	if (d_img == NULL)
+	int *temp;
+	temp = malloc(height*width*channels*sizeof(int));
+	int **pre;
+	pre = malloc(height*sizeof(int*));
+	if (d_img == NULL || temp == NULL)
 	{
 		printf("Unable to allocate memory for image\n");
 	}
 
 	for(int i=0; i < height; i++)
 	{
+		pre[i] = temp + i*width*channels;
 		for (int j=0; j < width*channels; j++)
 		{
 			pre[i][j] = img[i*width*channels + j];
