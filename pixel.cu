@@ -153,7 +153,7 @@ void ditherimage(int height, int width, int intervalLen, int* in, unsigned char*
 	int *in_cpu = (int*)malloc(width*height*sizeof(int));
 	unsigned char* out_cpu = (unsigned char*)malloc(width*height*sizeof(unsigned char));
 	cudaMemcpy(in_cpu, in, width*height*sizeof(int), cudaMemcpyDeviceToHost);
-	cudaMemcpy(out_cpu, out, width*height*sizeof(unsigned char), cudaMemcpyDeviceToHost);
+	//cudaMemcpy(out_cpu, out, width*height*sizeof(unsigned char), cudaMemcpyDeviceToHost);
 	cudaMalloc(&g_size, 4*sizeof(int));
 	cudaMalloc(&g_right, 4*sizeof(bool));
 	for (int i=1; i <= 2*(height-1) + width; i++)

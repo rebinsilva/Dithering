@@ -16,7 +16,8 @@ typedef struct PrimalBlock
 
 uint8_t nearest_color(int in, uint8_t intervalLen)
 {
-	in = (in > 255)?255:in;
+	in = fmin(in, 255);
+	in = fmax(in,0);
 	int temp = round(((float)in)/intervalLen);
 	return temp*intervalLen;
 }
