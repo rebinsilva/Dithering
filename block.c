@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <omp.h>
+#include <time.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
@@ -133,7 +134,20 @@ int main(int argc, char* argv[])
 			pre[i][j] = img[i*width*channels + j];
 		}
 	}
+	
+	struct timespec start, finish;
+	double elapsed;
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
+
 	block(height, width, channels, pre, d_img, intervalLen, a, b);
+
+	clock_gettime(CLOCK_MONOTONIC, &finish);
+
+	elapsed = (finish.tv_sec - start.tv_sec) * 1000;
+	elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000.0;
+	printf("Time taken in milliseconds: %f\n", elapsed);
+	
 	stbi_write_png(argv[3], width, height, channels, d_img, width*channels);
 
 	return 0;
