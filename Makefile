@@ -1,4 +1,4 @@
-all: basic block image_comparer pixel
+all: basic block image_comparer pixel hybrid
 
 basic: basic.c
 	gcc basic.c -lm -g -o basic
@@ -11,3 +11,6 @@ image_comparer: image_comparer.c
 
 pixel: pixel.cu
 	nvcc pixel.cu -g -G -o pixel
+
+hybrid: hybrid.cu
+	nvcc hybrid.cu -g -G -o hybrid
