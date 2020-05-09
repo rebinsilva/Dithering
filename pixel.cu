@@ -291,7 +291,21 @@ int main(int argc, char* argv[])
 
 	reorder(height, width, channels, pre, reordered, primals);
 	cudaMemcpy(g_reordered, reordered, width*height*sizeof(int), cudaMemcpyHostToDevice);
+	
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	float milliseconds = 0;
+	cudaEventRecord(start,0);
+
 	ditherimage(height, width, intervalLen, g_reordered, g_dithered, primals);
+	cudaDeviceSynchronize();
+
+	cudaEventRecord(stop,0);
+	cudaEventSynchronize(stop);
+	cudaEventElapsedTime(&milliseconds, start, stop);
+	printf("Time taken in milliseconds: %f\n",milliseconds);
+	
 	cudaMemcpy(dithered, g_dithered, width*height*sizeof(unsigned char), cudaMemcpyDeviceToHost);
 	order(height, width, channels, dithered, img, d_img);
 	stbi_write_png(argv[3], width, height, channels, d_img, width*channels);

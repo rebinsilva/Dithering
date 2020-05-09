@@ -8,7 +8,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image/stb_image_write.h"
 
-int cpu_width = 64;
+int cpu_width = 60;
 typedef struct PrimalBlock
 {
 	int row;
@@ -315,7 +315,21 @@ int main(int argc, char* argv[])
 
 	reorder(height, width, channels, pre, reordered, primals);
 	cudaMemcpy(g_reordered, reordered, width*height*sizeof(int), cudaMemcpyHostToDevice);
+
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	float milliseconds = 0;
+	cudaEventRecord(start,0);
+
 	ditherimage(height, width, intervalLen, reordered, g_reordered, dithered, g_dithered, primals);
+	cudaDeviceSynchronize();
+
+	cudaEventRecord(stop,0);
+	cudaEventSynchronize(stop);
+	cudaEventElapsedTime(&milliseconds, start, stop);
+	printf("Time taken in milliseconds: %f\n",milliseconds);
+
 	order(height, width, channels, dithered, img, d_img);
 	stbi_write_png(argv[3], width, height, channels, d_img, width*channels);
 	free(d_img);
