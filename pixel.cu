@@ -268,28 +268,29 @@ int main(int argc, char* argv[])
 
 	size_t img_size = width*height*channels;
 
+	int* primals;
+	primals = (int*)malloc((width+2*height+2)*sizeof(int));
 	unsigned char* d_img = (unsigned char*)calloc(img_size, sizeof(unsigned char));
 	unsigned char* pre[height];
-	int reordered[width*height];
-	unsigned char dithered[width*height];
+	int* reordered = (int*)malloc(width*height*sizeof(int));
+	unsigned char* dithered = (unsigned char*)malloc(width*height*sizeof(unsigned char));
 	int *g_reordered;
 	unsigned char* g_dithered;
-	int primals[width+2*(height-1)+4];
-	for(int i=0; i<4; i++)
-		primals[width+2*(height-1) + i]=width*height;
-	cudaMalloc(&g_reordered, width*height*sizeof(int));
-	cudaMalloc(&g_dithered, width*height*sizeof(int));
-	if (d_img == NULL)
+	if (d_img == NULL || primals == NULL || reordered == NULL || dithered == NULL)
 	{
 		printf("Unable to allocate memory for image\n");
 	}
 
+	for(int i=0; i<4; i++)
+		primals[width+2*(height-1) + i]=width*height;
 	for(int i=0; i < height; i++)
 	{
 		pre[i] = img + i*width*channels;
 	}
-
 	reorder(height, width, channels, pre, reordered, primals);
+	cudaMalloc(&g_dithered, width*height*sizeof(unsigned char));
+	cudaMalloc(&g_reordered, width*height*sizeof(int));
+
 	cudaMemcpy(g_reordered, reordered, width*height*sizeof(int), cudaMemcpyHostToDevice);
 	
 	cudaEvent_t start, stop;
