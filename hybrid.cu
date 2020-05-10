@@ -167,6 +167,10 @@ void ditherimage(int height, int width, int intervalLen, int* in_cpu, int* in, u
 	cudaMemcpy(in_cpu, in, width*height*sizeof(int), cudaMemcpyDeviceToHost);
 	cudaMalloc(&g_size, 4*sizeof(int));
 	cudaMalloc(&g_right, 3*sizeof(bool));
+
+	cudaStream_t mem;
+	cudaStreamCreate(&mem);
+
 	for (int i=1; i <= 2*(height-1) + width; i++)
 	{
 		PrimalBlock pb = pb_finder(height, width, i);
@@ -187,13 +191,15 @@ void ditherimage(int height, int width, int intervalLen, int* in_cpu, int* in, u
 				cudaMemcpy(out, out_cpu, width*height*sizeof(unsigned char), cudaMemcpyHostToDevice);
 				isGPU = true;
 			}
-			if(size[0] < 1024)
+			int n1 = (pb.col - 1 - cpu_width)/2 + 1;
+			int no_threads = max(n1, size[0]);
+			if(no_threads < 1024)
 			{
-				dither<<<1,size[0]>>>(g_right, primals[i-1], intervalLen, pb.col-1, cpu_width, in, out, g_size, zero_memory);
+				dither<<<1,no_threads>>>(g_right, primals[i-1], intervalLen, pb.col-1, cpu_width, in, out, g_size, zero_memory);
 			}
 			else
 			{
-				dither<<<ceil(((float)size[0])/1024),1024>>>(g_right, primals[i-1], intervalLen, pb.col-1, cpu_width, in, out, g_size, zero_memory);
+				dither<<<ceil(((float)no_threads)/1024),1024>>>(g_right, primals[i-1], intervalLen, pb.col-1, cpu_width, in, out, g_size, zero_memory);
 			}
 			int j;
 			for (j=size[0]-1; j>=0; j--)
@@ -205,7 +211,7 @@ void ditherimage(int height, int width, int intervalLen, int* in_cpu, int* in, u
 				dither_cpu(right, primals[i-1], intervalLen, in_cpu, out_cpu, size, j);
 			}
 			cudaDeviceSynchronize();
-			cudaMemcpy(out_cpu + primals[i-1], out + primals[i-1], (j+1)*sizeof(unsigned char), cudaMemcpyDeviceToHost);
+			cudaMemcpyAsync(out_cpu + primals[i-1], out + primals[i-1], (j+1)*sizeof(unsigned char), cudaMemcpyDeviceToHost, mem);
 		}
 		else
 		{
@@ -222,7 +228,6 @@ void ditherimage(int height, int width, int intervalLen, int* in_cpu, int* in, u
 		}
 	}
 
-	cudaMemcpy(in, in_cpu, width*height*sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(out, out_cpu, width*height*sizeof(unsigned char), cudaMemcpyHostToDevice);
 }
 
@@ -338,4 +343,3 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
-
