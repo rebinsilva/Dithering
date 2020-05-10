@@ -15,12 +15,11 @@ typedef struct PrimalBlock
 	int col;
 }PrimalBlock;
 
-uint8_t nearest_color(int in, uint8_t intervalLen)
+uint8_t nearest_color(float in, uint8_t intervalLen)
 {
 	in = fmin(in, 255);
 	in = fmax(in,0);
-	int temp = round(((float)in)/intervalLen);
-	return temp*intervalLen;
+	return round(((float)in)/intervalLen)*intervalLen;
 }
 
 PrimalBlock pb_finder(int M, int N, int a, int b, int itr)
@@ -39,7 +38,7 @@ PrimalBlock pb_finder(int M, int N, int a, int b, int itr)
 	return ans;
 }
 
-void dither(int height, int width, int channels, int** img, unsigned char* d_img, uint8_t intervalLen, int row, int col)
+void dither(int height, int width, int channels, float** img, unsigned char* d_img, uint8_t intervalLen, int row, int col)
 {
 	int i=row,j=col;
 	d_img[i*width*channels + j] = nearest_color(img[i][j], intervalLen);
@@ -47,7 +46,7 @@ void dither(int height, int width, int channels, int** img, unsigned char* d_img
 	{
 		d_img[i*width*channels + j + 1] = img[i][j +1];
 	}
-	int err = img[i][j] - d_img[i*width*channels + j];
+	float err = img[i][j] - d_img[i*width*channels + j];
 	if (j+channels < width*channels)
 	{
 		img[i][j+channels] += (err*7)/16;
@@ -66,7 +65,7 @@ void dither(int height, int width, int channels, int** img, unsigned char* d_img
 	}
 }
 
-void ditherblock(int height, int width, int channels, int** img, unsigned char* d_img, uint8_t intervalLen, int row, int col, int a, int b)
+void ditherblock(int height, int width, int channels, float** img, unsigned char* d_img, uint8_t intervalLen, int row, int col, int a, int b)
 {
 	row = a*row;
 	col = b*col;
@@ -79,7 +78,7 @@ void ditherblock(int height, int width, int channels, int** img, unsigned char* 
 	}
 }
 
-void block(int height, int width, int channels, int** img, unsigned char* d_img, uint8_t intervalLen, int a, int b)
+void block(int height, int width, int channels, float** img, unsigned char* d_img, uint8_t intervalLen, int a, int b)
 {
 	int row = 0;
 	float col = 0;
@@ -88,7 +87,6 @@ void block(int height, int width, int channels, int** img, unsigned char* d_img,
 		PrimalBlock pb = pb_finder(height, width, a, b, i);
 		row = pb.row-1;
 		col = pb.col-1;
-		//printf("%d %d\n", row, col);
 		int mini = fmin(height - row -1, col/2);
 		omp_set_num_threads(8);
 		#pragma omp parallel for
@@ -121,12 +119,11 @@ int main(int argc, char* argv[])
 	int block_size = (width*height)/16;
 	int a = sqrt(block_size), b = a;
 
-	unsigned char* d_img = calloc(img_size, sizeof(unsigned char));
-	int *temp;
-	temp = malloc(height*width*channels*sizeof(int));
-	int **pre;
-	pre = malloc(height*sizeof(int*));
-	if (d_img == NULL || temp == NULL)
+	unsigned char* d_img = malloc(img_size*sizeof(unsigned char));
+	float *temp = malloc(height*width*channels*sizeof(float));
+	float **pre;
+	pre = malloc(height*sizeof(float*));
+	if (d_img == NULL || temp == NULL || pre == NULL)
 	{
 		printf("Unable to allocate memory for image\n");
 	}
@@ -154,6 +151,8 @@ int main(int argc, char* argv[])
 	printf("Time taken in milliseconds: %f\n", elapsed);
 	
 	stbi_write_png(argv[3], width, height, channels, d_img, width*channels);
-
+	free(d_img);
+	free(temp);
+	free(pre);
 	return 0;
 }

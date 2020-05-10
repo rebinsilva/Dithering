@@ -14,10 +14,10 @@ typedef struct PrimalBlock
 	int col;
 }PrimalBlock;
 
-__host__ __device__ uint8_t nearest_color(int in, uint8_t intervalLen)
+__host__ __device__ uint8_t nearest_color(float in, uint8_t intervalLen)
 {
-	in = min(in, 255);
-	in = max(in, 0);
+	in = fminf(in, 255);
+	in = fmaxf(in, 0);
 	int temp = round(((float)in)/intervalLen);
 	return (uint8_t)temp*intervalLen;
 }
@@ -38,10 +38,10 @@ PrimalBlock pb_finder(int M, int N, int itr)
 	return ans;
 }
 
-void dither_cpu(bool right[], int pri, int intervalLen, int* in, unsigned char* out, int size[], int tid)
+void dither_cpu(bool right[], int pri, int intervalLen, float* in, unsigned char* out, int size[], int tid)
 {
-	out[pri+tid] = (unsigned char)nearest_color(in[pri+tid], intervalLen);
-	int err = in[pri+tid] - out[pri+tid];
+	out[pri+tid] = nearest_color(in[pri+tid], intervalLen);
+	float err = in[pri+tid] - out[pri+tid];
 	if (right[0])
 	{
 		if (tid !=0)
@@ -88,15 +88,15 @@ void dither_cpu(bool right[], int pri, int intervalLen, int* in, unsigned char* 
 	return;
 }
 
-__global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned char* out, int size[])
+__global__ void dither(bool right[], int pri, int intervalLen, float* in, unsigned char* out, int size[])
 {
 	int tid = blockIdx.x*blockDim.x + threadIdx.x;
 	if (tid >= size[0])
 	{
 		return;
 	}
-	out[pri+tid] = (unsigned char)nearest_color(in[pri+tid], intervalLen);
-	int err = in[pri+tid] - out[pri+tid];
+	out[pri+tid] = nearest_color(in[pri+tid], intervalLen);
+	float err = in[pri+tid] - out[pri+tid];
 	if (right[0])
 	{
 		if (tid !=0)
@@ -143,16 +143,16 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 	return;
 }
 
-void ditherimage(int height, int width, int intervalLen, int* in, unsigned char* out, int primals[])
+void ditherimage(int height, int width, int intervalLen, float* in, unsigned char* out, int primals[])
 {
 	int size[4];
 	bool right[3];
 	int* g_size;
 	bool* g_right;
 	bool isGPU = false;
-	int *in_cpu = (int*)malloc(width*height*sizeof(int));
+	float *in_cpu = (float*)malloc(width*height*sizeof(float));
 	unsigned char* out_cpu = (unsigned char*)malloc(width*height*sizeof(unsigned char));
-	cudaMemcpy(in_cpu, in, width*height*sizeof(int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(in_cpu, in, width*height*sizeof(float), cudaMemcpyDeviceToHost);
 	//cudaMemcpy(out_cpu, out, width*height*sizeof(unsigned char), cudaMemcpyDeviceToHost);
 	cudaMalloc(&g_size, 4*sizeof(int));
 	cudaMalloc(&g_right, 4*sizeof(bool));
@@ -201,11 +201,11 @@ void ditherimage(int height, int width, int intervalLen, int* in, unsigned char*
 		}
 	}
 
-	cudaMemcpy(in, in_cpu, width*height*sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(in, in_cpu, width*height*sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(out, out_cpu, width*height*sizeof(unsigned char), cudaMemcpyHostToDevice);
 }
 
-void reorder(int height, int width, int channels, unsigned char** pre, int out[], int primals[])
+void reorder(int height, int width, int channels, unsigned char** pre, float out[], int primals[])
 {
 	int counter = 0;
 	int row =0;
@@ -268,13 +268,12 @@ int main(int argc, char* argv[])
 
 	size_t img_size = width*height*channels;
 
-	int* primals;
-	primals = (int*)malloc((width+2*height+2)*sizeof(int));
+	int* primals = (int*)malloc((width+2*height+2)*sizeof(int));
 	unsigned char* d_img = (unsigned char*)calloc(img_size, sizeof(unsigned char));
 	unsigned char* pre[height];
-	int* reordered = (int*)malloc(width*height*sizeof(int));
+	float* reordered = (float*)malloc(width*height*sizeof(float));
 	unsigned char* dithered = (unsigned char*)malloc(width*height*sizeof(unsigned char));
-	int *g_reordered;
+	float *g_reordered;
 	unsigned char* g_dithered;
 	if (d_img == NULL || primals == NULL || reordered == NULL || dithered == NULL)
 	{
@@ -289,9 +288,9 @@ int main(int argc, char* argv[])
 	}
 	reorder(height, width, channels, pre, reordered, primals);
 	cudaMalloc(&g_dithered, width*height*sizeof(unsigned char));
-	cudaMalloc(&g_reordered, width*height*sizeof(int));
+	cudaMalloc(&g_reordered, width*height*sizeof(float));
 
-	cudaMemcpy(g_reordered, reordered, width*height*sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(g_reordered, reordered, width*height*sizeof(float), cudaMemcpyHostToDevice);
 	
 	cudaEvent_t start, stop;
 	cudaEventCreate(&start);

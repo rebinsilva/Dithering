@@ -8,16 +8,17 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image/stb_image_write.h"
 
-uint8_t nearest_color(int in, uint8_t intervalLen)
+uint8_t nearest_color(float in, uint8_t intervalLen)
 {
-	in = (in > 255)?255:in;
+	in = fmin(in, 255);
+	in = fmax(in, 0);
 	int temp = round(((float)in)/intervalLen);
 	return temp*intervalLen;
 }
 
-void basic(int* img, unsigned char* d_img, size_t img_size, int width, int channels,uint8_t intervalLen)
+void basic(float* img, unsigned char* d_img, size_t img_size, int width, int channels,uint8_t intervalLen)
 {
-	int err = 0, temp = 0;
+	float err = 0;
 	for (unsigned int i = 0; i<img_size; i += channels)
 	{
 		d_img[i] = nearest_color(img[i], intervalLen);
@@ -72,8 +73,8 @@ int main(int argc, char* argv[])
 
 	size_t img_size = width*height*channels;
 
-	unsigned char* d_img = calloc(img_size, sizeof(unsigned char));
-	int* pre = calloc(img_size, sizeof(int));
+	unsigned char* d_img = malloc(img_size*sizeof(unsigned char));
+	float* pre = malloc(img_size*sizeof(float));
 	if (d_img == NULL || pre == NULL)
 	{
 		printf("Unable to allocate memory for image\n");
