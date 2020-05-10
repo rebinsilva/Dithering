@@ -101,20 +101,20 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 	{
 		if (tid !=0)
 		{
-			in[pri + size[0] + tid - 1] += (err*7)/16;
+			atomicAdd(&in[pri + size[0] + tid - 1], (err*7)/16);
 			if (tid - 1 < size[3])
 				in[pri + size[0] + size[1] + size[2] + tid - 1] += err/16;
 		}
 		if (tid < size[1])
-			in[pri + size[0] + tid] += (err*3)/16;
+			atomicAdd(&in[pri + size[0] + tid], (err*3)/16);
 		if (tid < size[2])
 			in[pri + size[0] + size[1] + tid] += (err*5)/16;
 	}
 	else if (right[1])
 	{
-		in[pri + size[0] + tid] += (err*7)/16;
+		atomicAdd(&in[pri + size[0] + tid], (err*7)/16);
 		if (tid + 1 < size[1])
-			in[pri + size[0] + tid + 1] += (err*3)/16;
+			atomicAdd(&in[pri + size[0] + tid + 1], (err*3)/16);
 		if (tid < size[2])
 			in[pri + size[0] + size[1] + tid] += (err*5)/16;
 		if (tid < size[3])
@@ -122,9 +122,9 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 	}
 	else if (right[2])
 	{
-		in[pri + size[0] + tid] += (err*7)/16;
+		atomicAdd(&in[pri + size[0] + tid], (err*7)/16);
 		if (tid + 1 < size[1])
-			in[pri + size[0] + tid + 1] += (err*3)/16;
+			atomicAdd(&in[pri + size[0] + tid + 1], (err*3)/16);
 		if (tid + 1 < size[2])
 			in[pri + size[0] + size[1] + tid + 1] += (err*5)/16;
 		if (tid < size[3])
@@ -132,9 +132,9 @@ __global__ void dither(bool right[], int pri, int intervalLen, int* in, unsigned
 	}
 	else
 	{
-		in[pri + size[0] + tid] += (err*7)/16;
+		atomicAdd(&in[pri + size[0] + tid], (err*7)/16);
 		if (tid + 1 < size[1])
-			in[pri + size[0] + tid + 1] += (err*3)/16;
+			atomicAdd(&in[pri + size[0] + tid + 1], (err*3)/16);
 		if (tid + 1 < size[2])
 			in[pri + size[0] + size[1] + tid + 1] += (err*5)/16;
 		if (tid + 1 < size[3])
