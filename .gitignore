@@ -1,3 +1,9 @@
 a.out
 *.o
 *.png
+vgcore.*
+basic
+block
+hybrid
+image_comparer
+pixel

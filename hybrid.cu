@@ -293,7 +293,7 @@ int main(int argc, char* argv[])
 	unsigned char* pre[height];
 	int *reordered;
 	cudaHostAlloc(&reordered, width*height*sizeof(int), cudaHostAllocMapped);
-	unsigned char dithered[width*height];
+	unsigned char* dithered = (unsigned char*)malloc(width*height*sizeof(unsigned char));
 	int *g_reordered;
 	unsigned char* g_dithered;
 	int primals[width+2*(height-1)+4];
