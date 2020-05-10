@@ -58,7 +58,6 @@ int main(int argc, char* argv[])
 	int width, height, channels;
 	unsigned char *img = stbi_load(argv[2],&width, &height, &channels, 0);
 	uint8_t intervalLen = 255/(strtol(argv[1], NULL, 10)-1);
-
 	if (img == NULL)
 	{
 		printf("Error in loading the image");
@@ -70,28 +69,22 @@ int main(int argc, char* argv[])
 		printf("Not a grayscale image\n");
 		exit(1);
 	}
-
 	size_t img_size = width*height*channels;
-
 	unsigned char* d_img = malloc(img_size*sizeof(unsigned char));
 	float* pre = malloc(img_size*sizeof(float));
 	if (d_img == NULL || pre == NULL)
 	{
 		printf("Unable to allocate memory for image\n");
 	}
-
 	for(int i=0; i < img_size; i++)
 	{
 		pre[i] = img[i];
 	}
-	
 	struct timespec start, finish;
 	double elapsed;
 
 	clock_gettime(CLOCK_MONOTONIC, &start);
-
 	basic(pre, d_img, img_size, width, channels, intervalLen);
-
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
 	elapsed = (finish.tv_sec - start.tv_sec) * 1000;
@@ -99,7 +92,6 @@ int main(int argc, char* argv[])
 	printf("Time taken in milliseconds: %f\n", elapsed);
 	
 	stbi_write_png(argv[3], width, height, channels, d_img, width*channels);
-
 	stbi_image_free(img);
 	free(d_img);
 	return 0;

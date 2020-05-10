@@ -92,7 +92,7 @@ void block(int height, int width, int channels, float** img, unsigned char* d_im
 		#pragma omp parallel for
 		for(int k=0; k <= mini; k++)
 		{
-			ditherblock(height, width, channels, img, d_img, intervalLen, row+k, (col-2*k)*channels, a, b);
+			ditherblock(height, width, channels, img, d_img, intervalLen, row+k, col-2*k, a, b);
 		}
 	}
 }
@@ -141,9 +141,7 @@ int main(int argc, char* argv[])
 	double elapsed;
 
 	clock_gettime(CLOCK_MONOTONIC, &start);
-
 	block(height, width, channels, pre, d_img, intervalLen, a, b);
-
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
 	elapsed = (finish.tv_sec - start.tv_sec) * 1000;
