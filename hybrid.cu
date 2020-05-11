@@ -95,7 +95,6 @@ __global__ void dither(bool right[], int pri, int intervalLen, int col, int cpu_
 	{
 		return;
 	}
-	out[pri+tid] = nearest_color(in[pri+tid], intervalLen);
 	float *r = in, *br = in, *b = in, *bl = in;
 	if (col - 2*tid == cpu_width + 1)
 	{
@@ -107,6 +106,7 @@ __global__ void dither(bool right[], int pri, int intervalLen, int col, int cpu_
 		b = zero_memory;
 		in = zero_memory;
 	}
+	out[pri+tid] = nearest_color(in[pri+tid], intervalLen);
 	float err = in[pri+tid] - out[pri+tid];
 	if (right[0])
 	{
