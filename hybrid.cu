@@ -8,7 +8,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image/stb_image_write.h"
 
-int cpu_width = 60;
+int cpu_width = 80;
 typedef struct PrimalBlock
 {
 	int row;
@@ -182,7 +182,7 @@ void ditherimage(int height, int width, int intervalLen, float* in_cpu, float* i
 		right[2] = pb.col >= width - 2;
 		cudaMemcpy(g_right, right, 3*sizeof(bool), cudaMemcpyHostToDevice);
 		cudaMemcpy(g_size, size, 4*sizeof(int), cudaMemcpyHostToDevice);
-		if(size[0] > 64)
+		if(size[0] > 100)
 		{
 			if(!isGPU)
 			{

@@ -168,7 +168,7 @@ void ditherimage(int height, int width, int intervalLen, float* in, unsigned cha
 		right[2] = pb.col >= width - 2;
 		cudaMemcpy(g_size, size, 4*sizeof(int), cudaMemcpyHostToDevice);
 		cudaMemcpy(g_right, right, 3*sizeof(bool), cudaMemcpyHostToDevice);
-		if(size[0] > 64)
+		if(size[0] > 100)
 		{
 			if(!isGPU)
 			{
