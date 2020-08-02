@@ -1,7 +1,7 @@
 # Image Dithering
 Error diffusion dithering using Floyd–Steinberg dithering algorithm is implemented in this repository. The algorithm is implemented using CPU only and CPU-GPU hybri methods. This repository is an re-implementation of the paper [Hybrid Implementation of Error Diffusion Dithering]. 
 
-This repo uses stb_image as a sub module for reading and writing png. To download and test this repo, read how to download modules along with the repo.
+This repo uses stb_image as a sub module for reading and writing png. To download and test this repo, read how to download sub-modules along with the repo.
 ## Codes
 
 ### basic.c
